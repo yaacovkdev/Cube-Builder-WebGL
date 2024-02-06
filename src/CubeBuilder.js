@@ -64,42 +64,42 @@ var vertexColors = [
         0.5 ,0.5 ,
         0.5 ,1.0 ,
 
-        // select to top right image
-        0   , 0  ,
-        0.25   , 0,
-        0, 0.5  ,
-        0   , 0.5,
-        0.25, 0.5,
-        0.25, 0  ,
-
-        0.5 , 0  ,
-        0.5 , 0.5,
-        0.75, 0  ,
-        0.5 , 0.5,
-        0.75, 0.5,
-        0.75, 0  ,
-        // select the bottom left image
-        0   , 1  ,
-        0.25, 0.5,
-        0.25, 1  ,
-        0   , 0.5,
-        0.25, 0.5,
-        0   , 1  ,
         
-        // select the bottom middle image
+        0.5, 1.0,
+        0.5, 0.5,
+        0.75 ,0.5 ,
+        0.5, 1.0,
+        0.75 ,0.5 ,
+        0.75 ,1.0 ,
+
+        0, 1.0,
+        0, 0.5,
+        0.25 ,0.5 ,
+        0, 1.0,
+        0.25 ,0.5 ,
+        0.25 ,1.0 ,
+       
         0.25, 0.5,
-        0.25, 1  ,
-        0.5 , 0.5,
-        0.25, 1  ,
-        0.5 , 1  ,
-        0.5 , 0.5,
-        // select the bottom right image
-        0.5 , 0.5,
-        0.75, 0.5,
-        0.5 , 1  ,
-        0.5 , 1  ,
-        0.75, 0.5,
-        0.75, 1  ,
+        0.25, 0,
+        0.5 ,0 ,
+        0.25, 0.5,
+        0.5 ,0,
+        0.5 ,0.5 ,
+
+        
+        0.5, 0.5,
+        0.5, 0,
+        0.75 ,0 ,
+        0.5, 0.5,
+        0.75 ,0 ,
+        0.75 ,0.5 ,
+
+        0, 0.5,
+        0, 0,
+        0.25 ,0 ,
+        0, 0.5,
+        0.25 ,0 ,
+        0.25 ,0 ,
     ]);
 
 var lightPosition = vec4(1.0, 1.0, 10.0, 0.0 );
@@ -139,8 +139,6 @@ var Index = 0;
 var isclicked;
 var x, y;
 
-
-
 //types of modes
 const Fixed = "Fixed";
 const Move = "Move";
@@ -179,7 +177,13 @@ function quad(a, b, c, d) {
      positionsArray.push(vertices[d]);
      normalsArray.push(normal);
      colorsArray.push(vertexColors[a]);
+}
 
+function updateLook(){
+    var r = 10;
+    var pm = Math.sqrt(100 - Math.pow(r*viewtheta[1],2)); //height vector
+    
+    at = vec3(camerapos[xAxis] + pm * Math.sin(viewtheta[0]),r * Math.sin(viewtheta[1]),camerapos[zAxis] + pm * Math.cos(viewtheta[0]));
 }
 
 //create the polygons from the vertices of the cube
@@ -269,12 +273,12 @@ window.onload = function init() {
 
     isclicked = false;
 
-    viewtheta[xAxis] = -Math.PI;
+    viewtheta[xAxis] = Math.PI;
     viewtheta[yAxis] = 0;
     camerapos = [0.0,0.0,4.5]; //changed z to positive so the texture bugfix is clear   
 
     viewerPos = vec3(camerapos[0], camerapos[1], camerapos[2]);
-    at = vec3(0,0,0);
+    at = vec3(0,0,camerapos[zAxis] - 10);
     up = vec3(0,1,0);
 
     Mode = Move;
@@ -418,7 +422,6 @@ var render = function(){
                 viewtheta[xAxis] += -0.1;
             if(arrowdirection[3])
                 viewtheta[yAxis] += -0.1;
-            
         
             //turn caps
             viewtheta[0] %= 2 * Math.PI;
@@ -426,21 +429,18 @@ var render = function(){
             //vertical looking directio locks at pointing up and down
             if(viewtheta[1] >= Math.PI/2) viewtheta[1] = Math.PI/2;
             else if(viewtheta[1] <= -Math.PI/2) viewtheta[1] = -Math.PI/2;
-            
-            var r = 10;
-            var pm = Math.sqrt(100 - Math.pow(r*viewtheta[1],2));
-            
-            //weird calculation. needs redo
-            at = vec3(camerapos[xAxis] + pm * Math.sin(viewtheta[0]),r * Math.sin(viewtheta[1]),camerapos[zAxis] + pm * Math.cos(viewtheta[0]));
-            
+
+            updateLook();
         }
         if(Mode == Move){
-            if(arrowdirection[1])
-                camerapos[zAxis] += 0.2;
-            if(arrowdirection[3])
+            if(arrowdirection[1]){
                 camerapos[zAxis] += -0.2;
-            
-        
+            }
+            if(arrowdirection[3]){
+                camerapos[zAxis] += +0.2;
+            }
+
+            updateLook();
             viewerPos = vec3(camerapos[xAxis], 0, camerapos[zAxis]);
         }
 
@@ -477,7 +477,7 @@ var render = function(){
     gl.uniform1i(gl.getUniformLocation(program, "multicolor"), 0);
     
     
-    //First the first origin cube is rendered and initialized with rotation matrix, then rendered, then the next transformation info about matrices is being passed in.
+    //First the first origin cube is initialized with rotation matrix, then rendered, then the next transformation info about matrices is being passed in.
     var i;
     for(i = 0; i < placementStack.length; i++){
         translationMat = translate(...placementStack[0]);
@@ -500,28 +500,23 @@ var render = function(){
         gl.drawArrays(gl.TRIANGLES, 0, numPositions);
     
     }
-    
+
     if(Mode == Present){
         isclicked = false;
-        gl.uniform1i(gl.getUniformLocation(program, "multicolor"), 0);
     }else{
         gl.uniform1i(gl.getUniformLocation(program, "multicolor"), 1);
     }
-    
-    
+
     //Do this for the final Cube 
     if(isclicked){
-       
-        gl.clear( gl.COLOR_BUFFER_BIT );
         isclicked = false;
-        for(var i=0; i<6; i++) {
-            gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
-            gl.drawArrays( gl.TRIANGLES, 6*i, 6);
+        for(var j=0; j<6; j++) {
+            gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), j+1);
+            gl.drawArrays( gl.TRIANGLES, 6*j, 6);
         }
         
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
         gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), 0);
-        gl.clear( gl.COLOR_BUFFER_BIT );
         gl.drawArrays(gl.TRIANGLES, 0, numPositions);
         var face = getface(color);
 
@@ -553,7 +548,6 @@ var render = function(){
             audio_place.play();
             placementStack.push([...posoff]);
         }
-
     }
 
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
