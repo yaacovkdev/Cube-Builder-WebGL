@@ -57,12 +57,12 @@ var vertexColors = [
     ];
 
     var texCoordsArray = new Float32Array([
-        0.25, 0  ,
-        0.5 , 0  ,
+        0.25, 1.0,
         0.25, 0.5,
-        0.25, 0.5  ,
-        0.5 , 0.5,
-        0.5 , 0,
+        0.5 ,0.5 ,
+        0.25, 1.0,
+        0.5 ,0.5 ,
+        0.5 ,1.0 ,
 
         // select to top right image
         0   , 0  ,
@@ -269,12 +269,12 @@ window.onload = function init() {
 
     isclicked = false;
 
-    viewtheta[xAxis] = 0;
+    viewtheta[xAxis] = -Math.PI;
     viewtheta[yAxis] = 0;
-    camerapos = [0.0,0.0,-4.5];    
+    camerapos = [0.0,0.0,4.5]; //changed z to positive so the texture bugfix is clear   
 
     viewerPos = vec3(camerapos[0], camerapos[1], camerapos[2]);
-    at = vec3(viewtheta[xAxis],viewtheta[yAxis],0);
+    at = vec3(0,0,0);
     up = vec3(0,1,0);
 
     Mode = Move;
@@ -293,7 +293,7 @@ window.onload = function init() {
     
     document.getElementById("ButtonU").onclick = function(){
         
-        //So that the centre block won't be deleted
+        //Centre block won't be deleted
         if(placementStack.length == 1 || Mode == Present) return;
         placementStack.pop();
         audio_destroy.play();
@@ -409,7 +409,7 @@ function configureTexture(image){
 var render = function(){
     if(Mode != Fixed || Mode != Present){
         if(Mode == Look){
-
+            //turns camera, no tilting
             if(arrowdirection[0])
                 viewtheta[xAxis] += 0.1;
             if(arrowdirection[1])
@@ -422,13 +422,17 @@ var render = function(){
         
             //turn caps
             viewtheta[0] %= 2 * Math.PI;
-
+            
+            //vertical looking directio locks at pointing up and down
             if(viewtheta[1] >= Math.PI/2) viewtheta[1] = Math.PI/2;
             else if(viewtheta[1] <= -Math.PI/2) viewtheta[1] = -Math.PI/2;
             
             var r = 10;
             var pm = Math.sqrt(100 - Math.pow(r*viewtheta[1],2));
+            
+            //weird calculation. needs redo
             at = vec3(camerapos[xAxis] + pm * Math.sin(viewtheta[0]),r * Math.sin(viewtheta[1]),camerapos[zAxis] + pm * Math.cos(viewtheta[0]));
+            
         }
         if(Mode == Move){
             if(arrowdirection[1])
