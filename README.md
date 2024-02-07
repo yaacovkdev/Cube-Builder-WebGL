@@ -4,10 +4,13 @@
 Needed Version Node 16+.
 
 Before beginning Project run:
+
 npm init -y
+
 npm install
 
 To start run:
+
 node server.js
 
 Open webbrowser
