@@ -18,21 +18,21 @@ CMPT 370 A
 <script id="vertex-shader" type="x-shader/x-vertex">
 #version 300 es
 
-in  vec4 aPosition;
-in  vec3 aNormal;
+in vec4 aPosition;
+in vec3 aNormal;
 in vec4 aColor;
 in vec2 aTexCoord;
 
 out vec4 vColor;
+out vec4 bColor;
 out vec2 vTexCoord;
+
 
 uniform vec4 uAmbientProduct, uDiffuseProduct, uSpecularProduct;
 uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform vec4 uLightPosition;
 uniform float uShininess;
-
-uniform bool multicolor;
 
 void main()
 {
@@ -50,14 +50,7 @@ void main()
     vec3 N = normalize((uModelViewMatrix*NN).xyz);
 
     // Compute terms in the illumination equation
-    vec4 ambient;
-    if(multicolor == true){
-        ambient = 0.7*aColor;
-    }
-    else{
-        ambient = uAmbientProduct;
-        
-    }
+    vec4 ambient = uAmbientProduct;
     
     float Kd = max(dot(L, N), 0.0);
     vec4  diffuse = Kd*uDiffuseProduct;
@@ -72,7 +65,7 @@ void main()
     gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
     vTexCoord = aTexCoord;
     vColor = ambient + diffuse +specular;
-
+    bColor = aColor;
     vColor.a = 1.0;
 }
 </script>
@@ -82,35 +75,23 @@ void main()
 
 precision mediump float;
 
-in vec4 vColor;
+in vec4 vColor; //for texture shaders
+in vec4 bColor; //for usable block
 in vec2 vTexCoord;
 
 out vec4 fColor;
 
 uniform sampler2D uTextureMap;
-uniform int uColorIndex;
 uniform bool multicolor;
 
 void main()
 {
-    vec4 c[7];
-    c[0] = vColor;
-    c[1] = vec4(1.0, 0.0, 0.0, 1.0); //red
-    c[2] = vec4(0.0, 1.0, 0.0, 1.0); //green
-    c[3] = vec4(0.0, 0.0, 1.0, 1.0); //blue
-    c[4] = vec4(1.0, 1.0, 0.0, 1.0); 
-    c[5] = vec4(0.0, 1.0, 1.0, 1.0);
-    c[6] = vec4(1.0, 0.0, 1.0, 1.0);
-
     vec4 T = texture(uTextureMap, vTexCoord);
 
-    if(uColorIndex==0){
-        if(multicolor)
-            fColor = vColor;
-        else
-            fColor = T * vColor;
-    }
-    else fColor = c[uColorIndex];
+    if(multicolor)
+        fColor = bColor;
+    else
+        fColor = T * vColor;
 }
 </script>
 

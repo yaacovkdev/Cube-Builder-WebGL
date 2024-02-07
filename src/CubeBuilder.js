@@ -48,13 +48,16 @@ var vertices = [
 var vertexColors = [
         vec4(0.0, 0.0, 0.0, 1.0),  // black
         vec4(1.0, 0.0, 0.0, 1.0),  // red
-        vec4(1.0, 1.0, 0.0, 1.0),  // yellow
         vec4(0.0, 1.0, 0.0, 1.0),  // green
         vec4(0.0, 0.0, 1.0, 1.0),  // blue
         vec4(1.0, 0.0, 1.0, 1.0),  // magenta
+        vec4(1.0, 1.0, 0.0, 1.0),  // yellow
         vec4(0.0, 1.0, 1.0, 1.0),  // cyan
         vec4(1.0, 1.0, 1.0, 1.0),   // white
+        //123645
     ];
+
+    
 
     var texCoordsArray = new Float32Array([
         0.25, 1.0,
@@ -133,8 +136,6 @@ var viewtheta = [0,0];
 var camerapos;
 
 var thetaLoc;
-
-var Index = 0;
 
 var isclicked;
 var x, y;
@@ -348,8 +349,7 @@ window.onload = function init() {
 
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "uProjectionMatrix"),
        false, flatten(projectionMatrix) );
-    
-    gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"),0);
+
     
     
     document.addEventListener('keydown', function(event){
@@ -376,23 +376,17 @@ window.onload = function init() {
     render();
 }
 
-//Gets the face of the cube, of all 6 faces, by associating the color onot which the user has clicked on
+//Gets the face of the cube, of all 6 faces, by associating the color to which the user has clicked on
 function getface(colors){
-    var switches = [-1,-1,-1];
-    
-    for(var i = 0; i < 3; i++){
-        if(colors[i] == 255) switches[i] = 1;
-        else if(colors[i] == 0) switches[i] = 0;
-    }
+    var adjpos = null;
+    if(colors[0] == 255 && colors[1] == 0 && colors[2] == 0) adjpos = [0,0,1];
+    if(colors[0] == 0 && colors[1] == 255 && colors[2] == 0) adjpos = [1,0,0];
+    if(colors[0] == 0 && colors[1] == 0 && colors[2] == 255) adjpos = [0,-1,0];
+    if(colors[0] == 255 && colors[1] == 255 && colors[2] == 0) adjpos = [-1,0,0];
+    if(colors[0] == 0 && colors[1] == 255 && colors[2] == 255) adjpos = [0,1,0];
+    if(colors[0] == 255 && colors[1] == 0 && colors[2] == 255) adjpos = [0,0,-1];
 
-    if(switches[0] == 1 && switches[1] == 1 && switches[2] == 0) return 0; //top
-    if(switches[0] == 1 && switches[1] == 0 && switches[2] == 1) return 1; //left
-    if(switches[0] == 1 && switches[1] == 0 && switches[2] == 0) return 2; //front
-    if(switches[0] == 0 && switches[1] == 1 && switches[2] == 1) return 3; //back
-    if(switches[0] == 0 && switches[1] == 1 && switches[2] == 0) return 4; //right
-    if(switches[0] == 0 && switches[1] == 0 && switches[2] == 1) return 5; //bottom
-    
-    return -1;
+    return adjpos;
 }
 
 //COnfigures the image to properly load on the fragment 
@@ -498,7 +492,6 @@ var render = function(){
         if(i == placementStack.length-1) break;
         
         gl.drawArrays(gl.TRIANGLES, 0, numPositions);
-    
     }
 
     if(Mode == Present){
@@ -510,41 +503,14 @@ var render = function(){
     //Do this for the final Cube 
     if(isclicked){
         isclicked = false;
-        for(var j=0; j<6; j++) {
-            gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), j+1);
-            gl.drawArrays( gl.TRIANGLES, 6*j, 6);
-        }
-        
+        gl.drawArrays(gl.TRIANGLES, 0, numPositions);      
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
-        gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), 0);
-        gl.drawArrays(gl.TRIANGLES, 0, numPositions);
-        var face = getface(color);
 
-        var posoff = [0,0,0];
-        switch(face){
-            case 0:
-                posoff[1] = 1;
-                break;
-            case 1:
-                posoff[0] = -1;
-                break;
-            case 2:
-                posoff[2] = 1;
-                break;
-            case 3:
-                posoff[2] = -1;
-                break;
-            case 4:
-                posoff[0] = 1;
-                break;
-            case 5:
-                posoff[1] = -1;
-                break;
-            default:
-                break;
-        }
+        gl.drawArrays(gl.TRIANGLES, 0, numPositions);
         
-        if(face != -1){
+        var posoff = getface(color);
+        
+        if(posoff != null){
             audio_place.play();
             placementStack.push([...posoff]);
         }
